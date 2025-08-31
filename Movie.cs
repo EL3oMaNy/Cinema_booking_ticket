@@ -8,54 +8,69 @@ namespace ConsoleApp1
 {
     public class Movie
     {
-        public string title;
-        public int duration;
-        public bool[] seats;
+        public string Title { get; set; }
+        public int Duration { get; set; }
+        public bool[] Seats { get; set; }
 
-        public Movie(string t, int d, int numSeats)
+        public static void BookMovieSeat()
         {
-            title = t;
-            duration = d;
-            seats = new bool[numSeats];
-        }
-
-        public void displaySeats()
-        {
-            Console.WriteLine("\nseats for " + title);
-            for (int i = 0; i < seats.Length; i++)
+            if (!File.Exists(Program.filePath))
             {
-                if (seats[i])
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("seat" + (i + 1) + ": booked");
-                    Console.ResetColor();
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("seat" + (i + 1) + ": available");
-                    Console.ResetColor();
-                }
-            }
-        }
-
-        public void bookSeat(int seatNumber)
-        {
-            if (seatNumber < 1 || seatNumber > seats.Length)
-            {
-                Console.WriteLine("Seat number not valid.");
+                Console.WriteLine(" No movies found!");
+                Program.justEnter();
                 return;
             }
 
-            if (seats[seatNumber - 1])
+            string[] lines = File.ReadAllLines(Program.filePath);
+            int choice = 0;
+            while (true)
             {
-                Console.WriteLine("Seat " + seatNumber + " already booked.");
+                Console.Clear();
+                Program.ViewMovies();
+                Console.Write("Select movie number: ");
+                string input = Console.ReadLine();
+                if (!int.TryParse(input, out choice) || choice < 1 || choice > lines.Length)
+                {
+                    Console.WriteLine("Please enter a valid input");
+                    Program.justEnter();
+                    continue;
+                }
+                break;
             }
-            else
+
+            string[] parts = lines[choice - 1].Split('|');
+            string title = parts[0];
+            int duration = int.Parse(parts[1]);
+            string[] seatsData = parts[2].Split(',');
+            int seatNum = 0;
+            while (true)
             {
-                seats[seatNumber - 1] = true;
-                Console.WriteLine("Seat " + seatNumber + " booked.");
+                Console.Clear();
+                Program.ViewMovies();
+                Console.WriteLine($"Select movie number: {choice}");
+                Console.Write("Enter seat number to book: ");
+                string input = Console.ReadLine();
+                if (!int.TryParse(input, out seatNum) || seatNum < 1 || seatNum > seatsData.Length)
+                {
+                    Console.WriteLine("Invalid seat number.");
+                    Program.justEnter();
+                    continue;
+                }
+
+                if (seatsData[seatNum - 1] == "1")
+                {
+                    Console.WriteLine("Seat already booked.");
+                    Program.justEnter();
+                    continue;
+                }
+                break;
             }
+            seatsData[seatNum - 1] = "1";
+            lines[choice - 1] = $"{title}|{duration}|{string.Join(",", seatsData)}";
+            File.WriteAllLines(Program.filePath, lines);
+
+            Console.WriteLine($"Seat {seatNum} booked successfully!");
+            Program.justEnter();
         }
     }
 }

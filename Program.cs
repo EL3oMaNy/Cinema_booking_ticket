@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
@@ -8,158 +9,285 @@ using System.Text.RegularExpressions;
 
 namespace ConsoleApp1
 {
-    public class Program
+    class Program
     {
-        public static string filePath = "Movie.txt";
         public static List<Person> users = new List<Person>();
-        public static List<Movie> movies = new List<Movie>();
+        public static string filePath = "Movie.txt";
 
-        public static void AdminMenu(Person admin)
+        public static void Main(string[] args)
+        {
+            // مستخدمين ثابتين
+            users.Add(new Person("Admin User", "admin", "1234", "Admin"));
+            users.Add(new Person("Customer User", "user", "0000", "Customer"));
+
+            bool isValid = true;
+            Person loggedUser = null;
+            string role = null;
+
+            while (isValid)
+            {
+                Console.Clear();
+                Console.WriteLine("=== Cinema Ticket Booking System ===");
+
+                // تسجيل الدخول
+                Console.Write("Enter username: ");
+                string user = Console.ReadLine();
+
+                Console.Write("Enter password: ");
+                string pass = Console.ReadLine();
+
+                role = null;
+                loggedUser = null;
+
+                foreach (var p in users)
+                {
+                    string r = p.Login(user, pass);
+                    if (r != null)
+                    {
+                        role = r;
+                        loggedUser = p;
+                    }
+                }
+
+                if (role == "Admin")
+                {
+                    AdminMenu();
+                }
+                else if (role == "Customer")
+                {
+                    CustomerMenu();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid login.");
+                    justEnter();
+                    continue;
+                }
+            }
+        }
+
+        // قائمة الأدمن
+        public static void AdminMenu()
         {
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("###########Admin menu##############");
+                Console.WriteLine("--- Admin Menu ---");
                 Console.WriteLine("1. Add Movie");
-                Console.WriteLine("2. View All Bookings");
-                Console.WriteLine("3. CustomerMenu");
+                Console.WriteLine("2. Delete Movie");
+                Console.WriteLine("3. View All Movies & Seats");
                 Console.WriteLine("4. Logout");
-                Console.Write("Choose: ");
-                string choice = Console.ReadLine()!;
+
+                Console.Write("Choose an option: ");
+                string choice = Console.ReadLine();
+
                 switch (choice)
                 {
                     case "1":
                         AddMovie();
                         break;
                     case "2":
-                        ViewAllBookings();
+                        DeleteMovie();
                         break;
                     case "3":
-                        CustomerMenu(admin);
+                        ViewMovies();
                         break;
                     case "4":
                         return;
                     default:
-                        Console.WriteLine("Invalid choice!");
+                        Console.WriteLine("Invalid choice.");
+                        justEnter();
                         break;
                 }
             }
         }
 
-        public static void AddMovie()
-        {
-            Console.Write("Enter movie title:- ");
-            string title = Console.ReadLine()!;
-
-            Console.Write("Enter duration (minutes): ");
-            if (int.TryParse(Console.ReadLine(), out int duration))
-            {
-                Console.Write("Enter number of seats: ");
-                if (int.TryParse(Console.ReadLine(), out int seatCount))
-                {
-                    Movie m = new Movie(title, duration, seatCount);
-                    File.AppendAllText(filePath,$"Name:{title}   |duration:{duration} minutes   |numOfSeats:{seatCount}" + Environment.NewLine);
-
-                    Console.WriteLine("movie added successfully!");
-                }
-                else Console.WriteLine("Invalid seat number!!!!");
-            }
-            else Console.WriteLine("Invalid duration!!!!!!");
-            Console.ReadLine();
-        }
-
-        public static void ViewAllBookings()
-        {
-            Console.WriteLine("All bookings:-");
-            foreach (var m in movies)
-            {
-                m.displaySeats();
-            }
-            Console.WriteLine("Press enter to continue");
-            Console.ReadLine();
-        }
-
-        public static void CustomerMenu(Person customer)
+        // قائمة المستخدم
+        public static void CustomerMenu()
         {
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("#####customer  menu#######3#");
-                Console.WriteLine("1 choose movie");
-                Console.WriteLine("2 logout");
-                Console.Write(" choose: ");
-                string choice = Console.ReadLine()!;
+                Console.WriteLine("--- Customer Menu ---");
+                Console.WriteLine("1. View Movies");
+                Console.WriteLine("2. Book Seat");
+                Console.WriteLine("3. Logout");
 
-                if (choice == "1") ChooseMovie();
-
-                else if (choice == "2")
-
-                    return;
-                else Console.WriteLine("Invalid choice!!!!");
-            }
-        }
-
-        public static void ChooseMovie()
-        {
-            if (movies.Count == 0)
-            {
-                Console.WriteLine("No movies available!!!");
-                Console.ReadLine();
-                return;
-            }
-
-            Console.WriteLine("available Movies:- ");
-            for (int i = 0; i < movies.Count; i++)
-            {
-                Console.WriteLine($"{i + 1}. {movies[i].title} ({movies[i].duration} mins)");
-            }
-
-            Console.Write("choose movie number: ");
-            if (int.TryParse(Console.ReadLine(), out int choice) && choice >= 1 && choice <= movies.Count) //تم الاستعانة بالذكاء الاصطناعي في هذا الجزء
-            {
-                Movie selected = movies[choice - 1];
-                selected.displaySeats();
-
-                Console.Write("Enter seat number to book: ");
-                if (int.TryParse(Console.ReadLine(), out int seatNum))
-                {
-                    selected.bookSeat(seatNum);
-                }
-            }
-            else Console.WriteLine("Invalid choice!");
-            Console.ReadLine();
-        }
-        public static void Main()
-        {
-            while (true)
-            {
-                Console.Clear();
-                Console.Clear();
-                Console.WriteLine("#####Cinema ticket booking#########");
-                Console.ResetColor();
-                Console.WriteLine("1. Create Account");
-                Console.WriteLine("2. Login");
-                Console.WriteLine("3. Exit");
-                Console.Write("Choose: ");
-                string choice = Console.ReadLine()!;
+                Console.Write("Choose an option: ");
+                string choice = Console.ReadLine();
 
                 switch (choice)
                 {
                     case "1":
-                        Person.CreateAcc();
+                        ViewMovies();
                         break;
                     case "2":
-                        Person.Login();
+                        Movie.BookMovieSeat();
                         break;
                     case "3":
-                        Console.WriteLine("Logged out successfully!");
                         return;
                     default:
-                        Console.WriteLine("Invalid choice! please try again");
-                        Thread.Sleep(750);
+                        Console.WriteLine("Invalid choice.");
+                        justEnter();
                         break;
                 }
             }
+        }
+
+        // إضافة فيلم جديد
+        public static void AddMovie()
+        {
+            string title = null;
+            int duration = 0;
+            int seatCount = 0;
+            Console.Clear();
+            Console.Write("Enter movie title: ");
+            title = Console.ReadLine();
+
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine($"Enter movie title: {title}");
+
+                Console.Write("Enter duration (minutes): ");
+                string input = Console.ReadLine();
+
+                if (!int.TryParse(input, out duration) || duration <= 0)
+                {
+                    Console.WriteLine("Please enter a positive number");
+                    justEnter();
+                    continue;
+                }
+                break;
+
+            }
+
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine($"Enter movie title: {title}");
+                Console.WriteLine($"Enter duration (minutes): {duration}");
+                Console.Write("Enter number of seats: ");
+                string input = Console.ReadLine();
+
+                if (!int.TryParse(input, out seatCount) || seatCount <= 0)
+                {
+                    Console.WriteLine("Please enter a positive number");
+                    justEnter();
+                    continue;
+                }
+                break;
+            }
+
+            string seatsData = string.Join(",", new string[seatCount].Select(_ => "0"));
+            File.AppendAllText(filePath, $"{title}|{duration}|{seatsData}\n");
+
+            Console.WriteLine("Movie added successfully!");
+            justEnter();
+        }
+
+        // عرض كل الأفلام والمقاعد المحجوزة
+        public static void ViewMovies()
+        {
+            Console.Clear();
+            Console.WriteLine("--- Movies List ---");
+
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine(" No movies found!");
+                justEnter();
+                return;
+            }
+
+            string[] lines = File.ReadAllLines(filePath);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split('|');
+                string title = parts[0];
+                int duration = int.Parse(parts[1]);
+                string[] seatsData = parts[2].Split(',');
+
+                Console.WriteLine($"{i + 1}. {title} ({duration} mins)");
+
+                for (int s = 0; s < seatsData.Length; s++)
+                {
+                    bool booked = seatsData[s] == "1";
+                    Console.ForegroundColor = booked ? ConsoleColor.DarkRed : ConsoleColor.Green;
+                    Console.Write($"Seat {s + 1}: {(booked ? "Booked" : "Available")} | ");
+                    if ((s + 1) % 5 == 0) Console.WriteLine();
+                }
+                Console.ResetColor();
+                Console.WriteLine("\n");
+            }
+            justEnter();
+        }
+
+        // حجز مقعد 
+        
+        public static void justEnter()
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("Please Enter any key to continue...");
+            Console.ResetColor();
+            Console.ReadKey();
+        }
+        // مسح فيلم 
+        public static void DeleteMovie()
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine(" No movies found!");
+                justEnter();
+                return;
+            }
+
+            string[] lines = File.ReadAllLines(filePath);
+
+            if (lines.Length == 0)
+            {
+                Console.WriteLine(" No movies available to delete!");
+                justEnter();
+                return;
+            }
+
+            Console.Clear();
+            Console.WriteLine("--- Delete Movie ---");
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split('|');
+                Console.WriteLine($"{i + 1}. {parts[0]} ({parts[1]} mins)");
+            }
+
+            int choice = 0;
+            while (true)
+            {
+                Console.Write("Enter movie number to delete: ");
+                string input = Console.ReadLine();
+                if (!int.TryParse(input, out choice) || choice < 1 || choice > lines.Length)
+                {
+                    Console.WriteLine("Invalid choice.");
+                    continue;
+                }
+                break;
+            }
+
+            // تأكيد
+            Console.Write($"Are you sure you want to delete \"{lines[choice - 1].Split('|')[0]}\"? (y/n): ");
+            string confirm = Console.ReadLine()?.ToLower();
+            if (confirm != "y")
+            {
+                Console.WriteLine(" Deletion cancelled.");
+                justEnter();
+                return;
+            }
+
+            List<string> updated = lines.ToList();
+            updated.RemoveAt(choice - 1);
+            File.WriteAllLines(filePath, updated);
+
+            Console.WriteLine(" Movie deleted successfully!");
+            justEnter();
         }
     }
 }
